@@ -16,31 +16,38 @@
 
 <script>
 // @ is an alias to /src
+import db from "@/firebase/init";
 
 export default {
   name: "home",
   data() {
     return {
-      smoothies: [
-        {
-          title: "Da Bomb",
-          slug: "da-bomb",
-          ingredients: ["Milk", "Jalapeno Pepper", "Chocolate"],
-          id: "1"
-        },
-        {
-          title: "Banana Bananza",
-          slug: "banana-bananza",
-          ingredients: ["Banana", "Ice Cream"],
-          id: "2"
-        }
-      ]
+      smoothies: []
     };
   },
   methods: {
     deleteSmoothie(id) {
-      this.smoothies = this.smoothies.filter(el => el.id !== id);
+      console.log(id);
+      //delete doc from firestore
+      db.collection("smoothies")
+        .doc(id)
+        .delete()
+        .then(() => {
+          this.smoothies = this.smoothies.filter(el => el.id !== id);
+        });
     }
+  },
+  created() {
+    //fetch data from the firestore
+    db.collection("smoothies")
+      .get()
+      .then(snapshot => {
+        snapshot.forEach(doc => {
+          let smoothie = doc.data();
+          smoothie.id = doc.id;
+          this.smoothies.push(smoothie);
+        });
+      });
   }
 };
 </script>
