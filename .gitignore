@@ -1,6 +1,11 @@
 .DS_Store
 node_modules
 /dist
+.firebase/hosting.ZGlzdA.cache
+.firebaserc
+firebase.json
+firestore.indexes.json
+firestore.rules
 
 # local env files
 .env.local
