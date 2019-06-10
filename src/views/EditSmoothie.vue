@@ -1,14 +1,14 @@
 <template>
-  <div class="add-smoothie container">
-    <h2 class="center-align indigo-text">Add A New Smoothie Recipe</h2>
-    <form @submit.prevent="addSmoothie">
+  <div v-if="smoothie" class="edit-smoothie container">
+    <h2>Edit {{ smoothie.title }} Smoothie</h2>
+    <form @submit.prevent="editSmoothie">
       <div class="field title">
         <label for="title">Smoothie name:</label>
-        <input type="text" name="title" v-model="title">
+        <input type="text" name="title" v-model="smoothie.title">
       </div>
-      <div v-for="(ingredient, index) in ingredients" :key="index" class="field">
+      <div v-for="(ingredient, index) in smoothie.ingredients" :key="index" class="field">
         <label for="ingredient">Ingredients:</label>
-        <input type="text" name="ingredient" v-model="ingredients[index]">
+        <input type="text" name="ingredient" v-model="smoothie.ingredients[index]">
         <i class="material-icons delete" @click="deleteIng(ingredient)">delete</i>
       </div>
       <div class="field add-ingredient">
@@ -18,37 +18,36 @@
       </div>
       <div class="field center-align">
         <p v-if="feedback" class="red-text">{{ feedback }}</p>
-        <button class="btn pink">Add Smoothie Recipe</button>
+        <button class="btn pink">Update Smoothie Recipe</button>
       </div>
     </form>
   </div>
 </template>
 
 <script>
-import db from "@/firebase/init";
+import db from "@/firebase/init.js";
 export default {
-  name: "AddSmoothie",
+  name: "EditSmoothie",
   data() {
     return {
-      title: null,
-      ingredients: [],
-      feedback: null,
-      slug: null
+      smoothie: null,
+      feedback: null
     };
   },
   methods: {
-    addSmoothie() {
-      if (this.title) {
+    editSmoothie() {
+      if (this.smoothie.title) {
         this.feedback = null;
-        this.slug = this.title
+        this.smoothie.slug = this.smoothie.title
           .toLowerCase()
           .replace(/[$_*+~.()'"!\-:@#%]/g, "")
           .replace(/\s/g, "-");
         db.collection("smoothies")
-          .add({
-            title: this.title,
-            slug: this.slug,
-            ingredients: this.ingredients
+          .doc(this.smoothie.id)
+          .update({
+            title: this.smoothie.title,
+            slug: this.smoothie.slug,
+            ingredients: this.smoothie.ingredients
           })
           .then(() => {
             this.$router.push({ name: "home" });
@@ -63,32 +62,45 @@ export default {
     addIngredient(event) {
       if (event.target.value !== "") {
         this.feedback = null;
-        this.ingredients.push(event.target.value);
+        this.smoothie.ingredients.push(event.target.value);
         event.target.value = "";
       } else {
         this.feedback = "You need to enter an ingredient first";
       }
     },
     deleteIng(ingredient) {
-      this.ingredients = this.ingredients.filter(el => el !== ingredient);
+      this.smoothie.ingredients = this.smoothie.ingredients.filter(
+        el => el !== ingredient
+      );
     }
+  },
+  created() {
+    let ref = db
+      .collection("smoothies")
+      .where("slug", "==", this.$route.params.smoothie_slug);
+    ref.get().then(snapshot => {
+      snapshot.forEach(doc => {
+        this.smoothie = doc.data();
+        this.smoothie.id = doc.id;
+      });
+    });
   }
 };
 </script>
 
 <style>
-.add-smoothie {
+.edit-smoothie {
   margin-top: 20px;
   padding: 20px;
   max-width: 500px;
 }
 
-.add-smoothie h2 {
+.edit-smoothie h2 {
   font-size: 1.9rem;
   margin: 20px auto;
 }
 
-.add-smoothie .field {
+.edit-smoothie .field {
   margin: 20px auto;
   position: relative;
 }
@@ -97,7 +109,7 @@ export default {
   display: block;
 }
 
-.add-smoothie .delete {
+.edit-smoothie .delete {
   position: absolute;
   bottom: 16px;
   right: 0;
@@ -106,5 +118,4 @@ export default {
   font-size: 1.4rem;
 }
 </style>
-
 
